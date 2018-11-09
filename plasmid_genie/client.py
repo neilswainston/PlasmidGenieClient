@@ -20,23 +20,27 @@ from synbiochem.utils import net_utils
 class PlasmidGenieClient(object):
     '''PlasmidGenieClient class.'''
 
-    def __init__(self, url='https://parts.synbiochem.co.uk'):
+    def __init__(self, ice_params, url='https://parts.synbiochem.co.uk'):
+        self.__ice_params = ice_params
         self.__url = url if url[-1] == '/' else url + '/'
 
-    def run(self, ice_params, filename, restr_enzs, melt_temp=70.0,
+    def run(self, filename, restr_enzs, melt_temp=70.0,
             circular=True):
         '''Run client.'''
-        result = self.__run_plasmid_genie(ice_params, filename, restr_enzs,
-                                          melt_temp, circular)
+        query = self.__get_plasmid_genie_query(filename, restr_enzs,
+                                               melt_temp, circular)
+        result = self.__run_query(query)
 
         print result
 
-    def __run_plasmid_genie(self, ice_params, filename, restr_enzs, melt_temp,
-                            circular):
-        '''Run PlasmidGenie.'''
-        query = _get_query(ice_params, filename,
-                           restr_enzs, melt_temp, circular)
+        if result:
+            query = self.__get_save_query(result)
+            result = self.__run_query(query)
 
+        print result
+
+    def __run_query(self, query):
+        '''Run query.'''
         headers = {'Accept': 'application/json, text/plain, */*',
                    'Accept-Language': 'en-gb',
                    'Content-Type': 'application/json;charset=UTF-8'}
@@ -49,6 +53,27 @@ class PlasmidGenieClient(object):
         status, resp = self.__get_progress(job_id)
 
         return resp['result'] if status[0] == 'finished' else None
+
+    def __get_plasmid_genie_query(self, filename, restr_enzs, melt_temp,
+                                  circular):
+        '''Return query.'''
+        query = {u'designs': _get_designs(filename),
+                 u'app': 'PlasmidGenie',
+                 u'ice': self.__ice_params,
+                 u'design_id': _get_design_id(filename),
+                 u'restr_enzs': restr_enzs,
+                 u'melt_temp': melt_temp,
+                 u'circular': circular}
+
+        return query
+
+    def __get_save_query(self, designs):
+        '''Return query.'''
+        query = {u'designs': designs,
+                 u'app': 'save',
+                 u'ice': self.__ice_params}
+
+        return query
 
     def __get_progress(self, job_id):
         '''Get progress.'''
@@ -69,19 +94,6 @@ class PlasmidGenieClient(object):
                     break
 
         return status, resp
-
-
-def _get_query(ice_params, filename, restr_enzs, melt_temp, circular):
-    '''Return query.'''
-    query = {u'designs': _get_designs(filename),
-             u'app': 'PlasmidGenie',
-             u'ice': ice_params,
-             u'design_id': _get_design_id(filename),
-             u'restr_enzs': restr_enzs,
-             u'melt_temp': melt_temp,
-             u'circular': circular}
-
-    return query
 
 
 def _get_design_id(filename):
@@ -109,8 +121,8 @@ def main(args):
                   u'password': args[2],
                   u'groups': args[3]}
 
-    client = PlasmidGenieClient('http://localhost:5000')
-    client.run(ice_params, filename=args[4], restr_enzs=args[5:])
+    client = PlasmidGenieClient(ice_params, 'http://localhost:5000')
+    client.run(filename=args[4], restr_enzs=args[5:])
 
 
 if __name__ == '__main__':
