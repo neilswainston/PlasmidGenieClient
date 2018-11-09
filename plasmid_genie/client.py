@@ -13,6 +13,7 @@ import json
 import os
 import sys
 
+from sseclient import SSEClient
 from synbiochem.utils import net_utils
 
 
@@ -25,6 +26,14 @@ class PlasmidGenieClient(object):
     def run(self, ice_params, filename, restr_enzs, melt_temp=70.0,
             circular=True):
         '''Run client.'''
+        result = self.__run_plasmid_genie(ice_params, filename, restr_enzs,
+                                          melt_temp, circular)
+
+        print result
+
+    def __run_plasmid_genie(self, ice_params, filename, restr_enzs, melt_temp,
+                            circular):
+        '''Run PlasmidGenie.'''
         query = _get_query(ice_params, filename,
                            restr_enzs, melt_temp, circular)
 
@@ -36,7 +45,30 @@ class PlasmidGenieClient(object):
                                          json.dumps(query),
                                          headers))
 
-        print resp['job_ids'][0]
+        job_id = resp['job_ids'][0]
+        status, resp = self.__get_progress(job_id)
+
+        return resp['result'] if status[0] == 'finished' else None
+
+    def __get_progress(self, job_id):
+        '''Get progress.'''
+        messages = SSEClient(self.__url + 'progress/' + job_id)
+        status = [None, None, float('NaN')]
+
+        for msg in messages:
+            resp = json.loads(msg.data)
+            update = resp['update']
+            updated_status = [update['status'], update['message'],
+                              update['progress']]
+
+            if updated_status != status:
+                status = updated_status
+                print '\t'.join([str(val) for val in status])
+
+                if status[0] != 'running':
+                    break
+
+        return status, resp
 
 
 def _get_query(ice_params, filename, restr_enzs, melt_temp, circular):
@@ -62,7 +94,7 @@ def _get_designs(filename):
     '''Get designs.'''
     designs = []
 
-    with open(filename) as fle:
+    with open(filename, 'rU') as fle:
         for line in fle:
             tokens = line.split()
             designs.append({'name': tokens[0], 'design': tokens[1:]})
@@ -77,7 +109,7 @@ def main(args):
                   u'password': args[2],
                   u'groups': args[3]}
 
-    client = PlasmidGenieClient()
+    client = PlasmidGenieClient('http://localhost:5000')
     client.run(ice_params, filename=args[4], restr_enzs=args[5:])
 
 
