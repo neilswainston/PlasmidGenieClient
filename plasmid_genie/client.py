@@ -27,32 +27,56 @@ class PlasmidGenieClient(object):
     def run(self, filename, restr_enzs, melt_temp=70.0,
             circular=True):
         '''Run client.'''
+        plas_gen_result = self.__run_plasmid_genie(filename, restr_enzs,
+                                                   melt_temp, circular)
+
+        save_result = self.__run_save(plas_gen_result)
+        print self.__run_export(save_result)
+
+    def __run_plasmid_genie(self, filename, restr_enzs, melt_temp, circular):
+        '''Run PlasmidGenie.'''
         query = self.__get_plasmid_genie_query(filename, restr_enzs,
                                                melt_temp, circular)
-        result = self.__run_query(query)
+        responses = self.__run_query(query)
 
-        print result
+        return responses[0][1]['result'] \
+            if responses[0][0][0] == 'finished' else None
 
-        if result:
-            query = self.__get_save_query(result)
-            result = self.__run_query(query)
+    def __run_save(self, result):
+        '''Save PlasmidGenie result to ICE.'''
+        query = self.__get_result_query(result)
+        response = self.__run_query(query)
+        results = [res.values() for res in response[0][1]['result']]
+        all_links = [[dct['link'] for dct in res] for res in results]
 
-        print result
+        #  TODO: add ice_ids to result
+
+        for res, links in zip(result, all_links):
+            res['links'].extend(links)
+
+        return result
+
+    def __run_export(self, designs):
+        '''Run export method to receive list of components.'''
+        query = self.__get_result_query(designs)
+        return self. __get_response('export', query)
 
     def __run_query(self, query):
         '''Run query.'''
+        resp = self.__get_response('submit', query)
+
+        job_id = resp['job_ids'][0]
+        return self.__get_progress(job_id)
+
+    def __get_response(self, method, query):
+        '''Get response.'''
         headers = {'Accept': 'application/json, text/plain, */*',
                    'Accept-Language': 'en-gb',
                    'Content-Type': 'application/json;charset=UTF-8'}
 
-        resp = json.loads(net_utils.post(self.__url + 'submit',
+        return json.loads(net_utils.post(self.__url + method,
                                          json.dumps(query),
                                          headers))
-
-        job_id = resp['job_ids'][0]
-        status, resp = self.__get_progress(job_id)
-
-        return resp['result'] if status[0] == 'finished' else None
 
     def __get_plasmid_genie_query(self, filename, restr_enzs, melt_temp,
                                   circular):
@@ -67,7 +91,7 @@ class PlasmidGenieClient(object):
 
         return query
 
-    def __get_save_query(self, designs):
+    def __get_result_query(self, designs):
         '''Return query.'''
         query = {u'designs': designs,
                  u'app': 'save',
@@ -77,6 +101,7 @@ class PlasmidGenieClient(object):
 
     def __get_progress(self, job_id):
         '''Get progress.'''
+        responses = []
         messages = SSEClient(self.__url + 'progress/' + job_id)
         status = [None, None, float('NaN')]
 
@@ -91,9 +116,10 @@ class PlasmidGenieClient(object):
                 print '\t'.join([str(val) for val in status])
 
                 if status[0] != 'running':
+                    responses.append([status, resp])
                     break
 
-        return status, resp
+        return responses
 
 
 def _get_design_id(filename):
