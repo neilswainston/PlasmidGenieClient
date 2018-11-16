@@ -3,7 +3,7 @@ PlasmidGenie client
 
 Usage:
 
-`pip2 install -r requirements.txt`
+`pip install -r requirements.txt`
 
 `python plasmid_genie/client.py https://ice.synbiochem.co.uk ICE_USERNAME ICE_PASSWORD synbiochem IN_FILENAME OUT_FILENAME MlyI`
 
