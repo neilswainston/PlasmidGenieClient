@@ -9,12 +9,15 @@ To view a copy of this license, visit <http://opensource.org/licenses/MIT/>.
 '''
 # pylint: disable=too-few-public-methods
 # pylint: disable=too-many-arguments
+# pylint: disable=relative-import
 import json
 import os
 import sys
 
 from sseclient import SSEClient
 from synbiochem.utils import net_utils
+
+from six.moves.urllib import request
 
 
 class PlasmidGenieClient(object):
@@ -24,14 +27,16 @@ class PlasmidGenieClient(object):
         self.__ice_params = ice_params
         self.__url = url if url[-1] == '/' else url + '/'
 
-    def run(self, filename, restr_enzs, melt_temp=70.0,
-            circular=True):
+    def run(self, in_filename, restr_enzs, melt_temp=70.0,
+            circular=True, out_filename='export.csv'):
         '''Run client.'''
-        plas_gen_result = self.__run_plasmid_genie(filename, restr_enzs,
+        plas_gen_result = self.__run_plasmid_genie(in_filename, restr_enzs,
                                                    melt_temp, circular)
 
         save_result = self.__run_save(plas_gen_result)
-        print self.__run_export(save_result)
+        export_result = self.__run_export(save_result)
+
+        self.__save_export(export_result['path'], out_filename)
 
     def __run_plasmid_genie(self, filename, restr_enzs, melt_temp, circular):
         '''Run PlasmidGenie.'''
@@ -46,13 +51,9 @@ class PlasmidGenieClient(object):
         '''Save PlasmidGenie result to ICE.'''
         query = self.__get_result_query(result)
         response = self.__run_query(query)
-        results = [res.values() for res in response[0][1]['result']]
-        all_links = [[dct['link'] for dct in res] for res in results]
 
-        #  TODO: add ice_ids to result
-
-        for res, links in zip(result, all_links):
-            res['links'].extend(links)
+        for res, ice_ids in zip(result, response[0][1]['result']):
+            res['ice_ids'] = ice_ids
 
         return result
 
@@ -121,6 +122,11 @@ class PlasmidGenieClient(object):
 
         return responses
 
+    def __save_export(self, path, out_filename):
+        '''Save export result.'''
+        request.urlretrieve(self.__url + path, out_filename)
+        print 'Exported to ' + out_filename
+
 
 def _get_design_id(filename):
     '''Get design id.'''
@@ -147,8 +153,8 @@ def main(args):
                   u'password': args[2],
                   u'groups': args[3]}
 
-    client = PlasmidGenieClient(ice_params, 'http://localhost:5000')
-    client.run(filename=args[4], restr_enzs=args[5:])
+    client = PlasmidGenieClient(ice_params)
+    client.run(in_filename=args[4], out_filename=args[5], restr_enzs=args[6:])
 
 
 if __name__ == '__main__':
