@@ -10,6 +10,7 @@ To view a copy of this license, visit <http://opensource.org/licenses/MIT/>.
 # pylint: disable=too-few-public-methods
 # pylint: disable=too-many-arguments
 # pylint: disable=relative-import
+# pylint: disable=superfluous-parens
 import json
 import os
 import sys
@@ -114,7 +115,7 @@ class PlasmidGenieClient(object):
 
             if updated_status != status:
                 status = updated_status
-                print '\t'.join([str(val) for val in status])
+                print('\t'.join([str(val) for val in status]))
 
                 if status[0] != 'running':
                     responses.append([status, resp])
@@ -125,7 +126,7 @@ class PlasmidGenieClient(object):
     def __save_export(self, path, out_filename):
         '''Save export result.'''
         request.urlretrieve(self.__url + path, out_filename)
-        print 'Exported to ' + out_filename
+        print('Exported to ' + out_filename)
 
 
 def _get_design_id(filename):
