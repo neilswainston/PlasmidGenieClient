@@ -167,7 +167,7 @@ def main(args):
                   u'groups': args[3]}
 
     client = PlasmidGenieClient(ice_params)
-    client.run(in_filename=args[4], out_filename=args[5], restr_enzs=args[6:], out_mapping=re.sub(re.sub('\.csv', '', args[5])+'_mapping.csv')
+    client.run(in_filename=args[4], out_filename=args[5], restr_enzs=args[6:], out_mapping=re.sub('\.csv', '', args[5])+'_mapping.csv')
 
 
 if __name__ == '__main__':
