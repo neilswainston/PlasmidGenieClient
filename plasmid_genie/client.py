@@ -39,6 +39,7 @@ class PlasmidGenieClient(object):
         export_result = self.__run_export(save_result)
 
         self.__save_export(export_result['path'], out_filename)
+        self.__save_mapping(save_result, out_mapping)
 
     def __run_plasmid_genie(self, filename, restr_enzs, melt_temp, circular):
         '''Run PlasmidGenie.'''
@@ -129,14 +130,14 @@ class PlasmidGenieClient(object):
         request.urlretrieve(self.__url + path, out_filename)
         print('Exported to ' + out_filename)
 
-    def __save_mapping(export, save_result, out_mapping):
+    def __save_mapping(self, save_result, out_mapping):
         ''' Save mapping names to ice '''
         with open(out_mapping, 'w') as handler:
             cw = csv.writer( handler )
             cw.writerow( ('Name', 'ICE') )
             for res in save_result:
                 cw.writerow( (res['name'],res['ice_ids']['part']['ice_id']) )
-        print('Experted mappint to ' + out_mapping )
+        print('Exported mapping to ' + out_mapping )
 
         
 
