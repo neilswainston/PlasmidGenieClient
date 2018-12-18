@@ -14,6 +14,8 @@ To view a copy of this license, visit <http://opensource.org/licenses/MIT/>.
 import json
 import os
 import sys
+import csv
+import re
 
 from sseclient import SSEClient
 from synbiochem.utils import net_utils
@@ -29,11 +31,10 @@ class PlasmidGenieClient(object):
         self.__url = url if url[-1] == '/' else url + '/'
 
     def run(self, in_filename, restr_enzs, melt_temp=70.0,
-            circular=True, out_filename='export.csv'):
+            circular=True, out_filename='export.csv', out_mapping='map.csv'):
         '''Run client.'''
         plas_gen_result = self.__run_plasmid_genie(in_filename, restr_enzs,
                                                    melt_temp, circular)
-
         save_result = self.__run_save(plas_gen_result)
         export_result = self.__run_export(save_result)
 
@@ -128,6 +129,16 @@ class PlasmidGenieClient(object):
         request.urlretrieve(self.__url + path, out_filename)
         print('Exported to ' + out_filename)
 
+    def __save_mapping(export, save_result, out_mapping):
+        ''' Save mapping names to ice '''
+        with open(out_mapping, 'w') as handler:
+            cw = csv.writer( handler )
+            cw.writerow( ('Name', 'ICE') )
+            for res in save_result:
+                cw.writerow( (res['name'],res['ice_ids']['part']['ice_id']) )
+        print('Experted mappint to ' + out_mapping )
+
+        
 
 def _get_design_id(filename):
     '''Get design id.'''
@@ -155,7 +166,7 @@ def main(args):
                   u'groups': args[3]}
 
     client = PlasmidGenieClient(ice_params)
-    client.run(in_filename=args[4], out_filename=args[5], restr_enzs=args[6:])
+    client.run(in_filename=args[4], out_filename=args[5], restr_enzs=args[6:], out_mapping=re.sub(re.sub('\.csv', '', args[5])+'_mapping.csv')
 
 
 if __name__ == '__main__':
