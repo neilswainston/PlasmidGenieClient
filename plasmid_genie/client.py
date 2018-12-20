@@ -37,7 +37,8 @@ class PlasmidGenieClient(object):
                                                    melt_temp, circular)
         save_result = self.__run_save(plas_gen_result)
         export_result = self.__run_export(save_result)
-
+        import pdb
+        pdb.set_trace()
         self.__save_export(export_result['path'], out_filename)
         self.__save_mapping(save_result, out_mapping)
 
