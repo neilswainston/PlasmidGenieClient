@@ -11,6 +11,7 @@ To view a copy of this license, visit <http://opensource.org/licenses/MIT/>.
 # pylint: disable=too-many-arguments
 # pylint: disable=relative-import
 # pylint: disable=superfluous-parens
+# pylint: disable=wrong-import-order
 import json
 import os
 import sys
