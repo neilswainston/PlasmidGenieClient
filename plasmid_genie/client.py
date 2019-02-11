@@ -30,7 +30,7 @@ class PlasmidGenieClient(object):
         self.__url = url if url[-1] == '/' else url + '/'
 
     def run(self, in_filename, restr_enzs, melt_temp=70.0,
-            circular=True, out_filename='export.csv'):
+            circular=True, out_filename='export.zip'):
         '''Run client.'''
         plas_gen_result = self.__run_plasmid_genie(in_filename, restr_enzs,
                                                    melt_temp, circular)
