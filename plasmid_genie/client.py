@@ -9,23 +9,20 @@ To view a copy of this license, visit <http://opensource.org/licenses/MIT/>.
 '''
 # pylint: disable=too-few-public-methods
 # pylint: disable=too-many-arguments
-# pylint: disable=relative-import
 # pylint: disable=superfluous-parens
 # pylint: disable=wrong-import-order
 import json
 import os
 import sys
-
+from urllib import request
+import requests
 from sseclient import SSEClient
-from synbiochem.utils import net_utils
-
-from six.moves.urllib import request
 
 
-class PlasmidGenieClient(object):
+class PlasmidGenieClient():
     '''PlasmidGenieClient class.'''
 
-    def __init__(self, ice_params, url='https://parts.synbiochem.co.uk'):
+    def __init__(self, ice_params, url='http://parts.synbiochem.co.uk'):
         self.__ice_params = ice_params
         self.__url = url if url[-1] == '/' else url + '/'
 
@@ -77,9 +74,11 @@ class PlasmidGenieClient(object):
                    'Accept-Language': 'en-gb',
                    'Content-Type': 'application/json;charset=UTF-8'}
 
-        return json.loads(net_utils.post(self.__url + method,
-                                         json.dumps(query),
-                                         headers))
+        resp = requests.post(self.__url + method,
+                             json.dumps(query),
+                             headers)
+
+        return json.loads(resp.text)
 
     def __get_plasmid_genie_query(self, filename, restr_enzs, melt_temp,
                                   circular):

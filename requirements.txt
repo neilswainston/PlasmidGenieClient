@@ -1,3 +1,2 @@
-six
-sseclient
-synbiochem-py
+requests[security]
+sseclient==0.0.22
